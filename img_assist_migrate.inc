@@ -8,12 +8,45 @@ function img_assist_migrate_node($nid) {
     ->condition('entity_id', $nid)
     ->execute();
 
+  $value = '';
   foreach ($node as $mynode) {
-    $value .= '<h2>Body Value:</h2>' . $mynode->body_value;
+    $body = $mynode->body_value;
+    $value .= '<h2>Body Value:</h2>' . $body;
     $value .= '<h2>Body Summary:</h2>' . $mynode->body_summary;
+
+    $end = 0;
+    while (($start = strpos($body, '[img_assist', $end)) !== FALSE) {
+      $end = strpos($body, ']', $start);
+      $img = substr($body, $start+12, $end-$start-12);
+      $value .= '<h2>Img_assist Tag</h2><p>' . $img . '</p>';
+      $start = $end;
+    }
+
+    // OK now we start again and pull out the wiki heading tags
+    $tags = array(
+      '=====' => '<h4>',
+      '====' => '<h3>',
+      '===' => '<h2>',
+      '==' => '<h1>',
+    );
+    foreach ($tags as $wikicode => $tag) {
+      hbdebug("Got $wikicode for $tag");
+      $end = 0;
+      while (($start = strpos($body, $wikicode, $end)) !== FALSE) {
+        $end = strpos($body, $wikicode, $start+strlen($wikicode)) + 1;
+        $body = substr_replace($body, $tag, $start, strlen($wikicode));
+        $body = substr_replace($body, preg_replace('/</', '</', $tag), $end, strlen($wikicode));
+        $end += strlen($wikicode);
+        $content = substr($body, $start, $end-$start);
+        hbdebug("start=$start, end=$end, content=$content, body=$body");
+//        $value .= '<h2>' . $wikicode . ' converted to:</h2>' . $tag . $content . preg_replace('/</', '</', $tag);
+        $start = $end;
+      }
+    }
+
   }
 
-  return ('<p>' . $value . '</p>');
+  return("$value <br />$body");
 }
 /*
 $count=0;
