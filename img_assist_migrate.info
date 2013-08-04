@@ -1,0 +1,4 @@
+name = Img Assist Migrate
+description = Turns img_assist tags from D6 to image_field/insert tags in D7 body text.
+core = 7.x
+dependencies[] = insert

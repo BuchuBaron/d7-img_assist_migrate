@@ -1,0 +1,158 @@
+<?php
+/**
+* @file
+* A migration module that converts img_assist tags in body text of a D7
+* migrated site, to the equivalent imagefield and insert table entries
+* and markup.  Notes on this are:
+*
+When using insert to add images to a post, the tables affected are:
+field_data_field_image:
+
+ entity_type | bundle | deleted | entity_id | revision_id | language | delta | field_image_fid | field_image_alt |  field_image_title  | field_image_width | field_image_height 
+-------------+--------+---------+-----------+-------------+----------+-------+-----------------+-----------------+---------------------+-------------------+--------------------
+ node        | page   |       0 |       438 |         438 | und      |     0 |             893 |                 | Image title for 237 |               512 |                768
+ node        | page   |       0 |       438 |         438 | und      |     1 |             894 |                 | img title 236       |              1024 |                683
+
+
+field_revision_field_image 
+
+ entity_type | bundle | deleted | entity_id | revision_id | language | delta | field_image_fid | field_image_alt |  field_image_title  | field_image_width | field_image_height 
+-------------+--------+---------+-----------+-------------+----------+-------+-----------------+-----------------+---------------------+-------------------+--------------------
+ node        | page   |       0 |       438 |         438 | und      |     0 |             893 |                 | Image title for 237 |               512 |                768
+ node        | page   |       0 |       438 |         438 | und      |     1 |             894 |                 | img title 236       |              1024 |                683
+
+file_managed 
+
+ fid | uid |   filename    |            uri            |  filemime  | filesize | status | timestamp  |   type    
+-----+-----+---------------+---------------------------+------------+----------+--------+------------+-----------
+ 893 |   1 | Trial 237.jpg | public://Trial 237.jpg    | image/jpeg |    96853 |      1 | 1374692862 | image
+ 894 |   1 | Trial 236.jpg | public://Trial 236.jpg    | image/jpeg |   174696 |      1 | 1374904743 | image
+
+
+file_usage 
+
+ fid  | module | type | id  | count 
+------+--------+------+-----+-------
+  893 | file   | node | 438 |     1
+  894 | file   | node | 438 |     1
+
+The markup produced is:
+<a class="colorbox colorbox-insert-image" href="http://72pg.proteaseeds.com/sites/finebushpeople.co.za/files/styles/medium/public/Trial%20237.jpg?itok=kAbBqU-n" rel="gallery-all" title="Image title for 236"><img alt="" class="image-medium img" src="http://72pg.proteaseeds.com/sites/finebushpeople.co.za/files/styles/medium/public/Trial%20237.jpg?itok=kAbBqU-n" title="Image title for 236" /></a></p><p>the markup of images injected,</p><p><img alt="" class="img" src="/sites/finebushpeople.co.za/files/Trial%20236.jpg" style="height:320px; width:480px" title="img title 236" />
+
+<a
+  class="colorbox colorbox-insert-image"
+  href="http://72pg.proteaseeds.com/sites/finebushpeople.co.za/files/styles/medium/public/Trial%20237.jpg?itok=kAbBqU-n"
+  rel="gallery-all"
+  title="Image title for 236"
+>
+  <img
+    alt=""
+    class="image-medium img"
+    src="http://72pg.proteaseeds.com/sites/finebushpeople.co.za/files/styles/medium/public/Trial%20237.jpg?itok=kAbBqU-n"
+    title="Image title for 236"
+  />
+</a>
+<p>the markup of images injected,</p><p>
+<p>
+  <a
+    class="colorbox colorbox-insert-image"
+    href="http://72pg.proteaseeds.com/sites/finebushpeople.co.za/files/styles/medium/public/Trial 237.jpg?itok=kAbBqU-n"
+    rel="gallery-all"
+    title="Image title for 237"
+  >
+    <img
+      alt=""
+      class="image-medium img"
+      src="http://72pg.proteaseeds.com/sites/finebushpeople.co.za/files/styles/medium/public/Trial%20237.jpg?itok=kAbBqU-n"
+      style="display:block; margin-left:auto; margin-right:auto"
+      title="Image title for 237"
+    />
+  </a>
+</p>
+<p>the markup of images injected,</p>
+<p>
+  <a
+    class="colorbox colorbox-insert-image"
+    href="http://72pg.proteaseeds.com/sites/finebushpeople.co.za/files/styles/medium/public/Trial%20236.jpg?itok=asQdu3Ba"
+    rel="gallery-all"
+    title="img title 236"
+  >
+    <img
+      alt=""
+      class="image-medium img"
+      src="http://72pg.proteaseeds.com/sites/finebushpeople.co.za/files/styles/medium/public/Trial%20236.jpg?itok=asQdu3Ba"
+      title="img title 236"
+    />
+  </a>
+</p>
+
+// {files} is a legacy table with old catalog image files in it.  Migrated files should be in {file_managed}, but some are not.  So migrate them during the process.
+// image:files === file_usage:file_managed
+// code snippets
+$url = file_create_url( $image["uri"] );
+insert_create_url($uri, $absolute = NULL, $clean_urls = TRUE) {
+$file = file_load($item['fid']);
+
+file_usage_add(stdClass $file, $module, $type, $id, $count = 1)
+<?php
+$query_image = "SELECT * FROM image WHERE nid=$nid and image_size = '_original'";
+$query_image = "SELECT * FROM file_usage WHERE id=$nid and module = 'image'";
+*
+*/
+
+//define('IMAGE_ORIGINAL', '_original');
+//define('IMAGE_PREVIEW', 'preview');
+//define('IMAGE_THUMBNAIL', 'thumbnail');
+
+/**
+* Implements hook_help.
+*
+* Displays help and module information.
+*
+* @param path
+*   Which path of the site we're using to display help
+* @param arg
+*   Array that holds the current path as returned from arg() function
+*/
+function img_assist_migrate_help($path, $arg) {
+  switch ($path) {
+    case "admin/help#img_assist_migrate":
+      return '<p>' . t("Migrates img_assist images to imagefield/insert markup in D7 posts.") . '</p>';
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_permission
+ */
+function img_assist_migrate_permission() {
+  return array(
+    'update node' => array(
+      'title' => t('Update Node'),
+      'description' => t('Allows the user to update the img_assist tags on a single node'),
+    ),
+    'update all nodes' => array(
+      'title' => t('Update All Nodes'),
+      'description' => t('Allows a user to run on command to update all the nodes on a site that have an img_assist tag in the body'),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function img_assist_migrate_menu() {
+  $items['img_assist_migrate/node/%'] = array(
+    'title' => 'Migrate tags in one node',
+    'page callback' => 'img_assist_migrate_node',
+    'page arguments' => array(2),
+    'access arguments' => array('update node'),
+    'type' => MENU_NORMAL_ITEM,
+    'weight' => 0,
+    'file' => 'img_assist_migrate.inc',
+  );
+
+  return $items;
+}
+
+
