@@ -91,7 +91,7 @@ The markup produced is:
 // code snippets
 $url = file_create_url( $image["uri"] );
 insert_create_url($uri, $absolute = NULL, $clean_urls = TRUE) {
-$file = file_load($item['fid']);
+$file = file_load($item['fid']); // for file_managed only
 
 file_usage_add(stdClass $file, $module, $type, $id, $count = 1)
 <?php
@@ -146,6 +146,15 @@ function img_assist_migrate_menu() {
     'title' => 'Migrate tags in one node',
     'page callback' => 'img_assist_migrate_node',
     'page arguments' => array(2),
+    'access arguments' => array('update node'),
+    'type' => MENU_NORMAL_ITEM,
+    'weight' => 0,
+    'file' => 'img_assist_migrate.inc',
+  );
+  $items['img_assist_migrate/choose_img/%/%/%'] = array(
+    'title' => 'Cleanup image files',
+    'page callback' => 'img_assist_migrate_cleanup_files',
+    'page arguments' => array(2, 3, 4),
     'access arguments' => array('update node'),
     'type' => MENU_NORMAL_ITEM,
     'weight' => 0,
